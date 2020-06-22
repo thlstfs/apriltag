@@ -9,6 +9,7 @@ ser.isOpen()
 
 detectedTag = None
 
+
 def rotateCamera(rotation):
     global ser
     rotY = np.rad2deg(rotation[1][0])
@@ -20,11 +21,13 @@ def rotateCamera(rotation):
     print(angle)
 
 def zoomIn(frame, center, width, height):
-    i = 100
-    xMax = int(center[0][0][0]) + i
-    xMin = int(center[0][0][0]) - i
-    yMax = int(center[0][0][1]) + i
-    yMin = int(center[0][0][1]) - i
+    global detectedTag
+    i = (height / 10) / (detectedTag.pose_t[2] + 1)
+    print(detectedTag.pose_t[2])
+    xMax = int(center[0][0][0] + i)
+    xMin = int(center[0][0][0] - i)
+    yMax = int(center[0][0][1] + i)
+    yMin = int(center[0][0][1] - i)
     if (xMax > width):
         xMax = width
     if (xMin < 0):
@@ -206,7 +209,6 @@ def cam3():
    
     R = np.float32([[0], [0], [0]])
     while(True):
-        # print(rvecs)
         ret, frame = cap.read()
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         tags = at_detector.detect(gray, estimate_tag_pose=True, camera_params=[mtx[0][0],mtx[1][1], mtx[0][2], mtx[1][2]], tag_size=0.182)
@@ -224,14 +226,9 @@ def cam3():
                 cam2Rot = [rotX, rotY, rotZ]
         if (detectedTag):
             t = np.float32([[0.34], [-0.03], [0]])
-            
-            
-            #imgpts, jac = cv.projectPoints(detectedTag.pose_t, R, t, mtx, dist)
             R, imgpts, jac, r = calculateRotation(detectedTag.pose_t, R, t, mtx, dist, 1920, 1080, 0.01)
             #print(imgpts)
-            
             if (r):
-                print(r)
                 rotateCamera(R)
             x1, y1 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
             x2, y2 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
