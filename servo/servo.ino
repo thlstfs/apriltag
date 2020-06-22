@@ -1,8 +1,8 @@
-#include <Servo.h>  // Servo kutuphanesini projemize dahil ettik
+#include <Servo.h>
 #include <stdlib.h>
 
 Servo servo1; 
-int angle = 0;
+int angle = 91;
 
 void setup() {
 
@@ -17,8 +17,8 @@ void loop() {
   if (x != 0) {
     angle = x;
   }
-  Serial.println(angle);
-  servo1.write(angle); 
+  Serial.println(angle-1);
+  servo1.write(angle-1); 
   delay(15); 
 
 
