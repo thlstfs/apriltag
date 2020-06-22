@@ -4,10 +4,20 @@ import numpy as np
 import threading
 import serial
 import time
-#ser = serial.Serial('COM7',baudrate=9600, timeout=1)
-#ser.isOpen()
+ser = serial.Serial('COM7',baudrate=9600, timeout=1)
+ser.isOpen()
 
 detectedTag = None
+
+def rotateCamera(rotation):
+    global ser
+    rotY = np.rad2deg(rotation[1][0])
+    angle = -int(rotY)
+    angle += 91
+    angle = str(angle)
+    ser.write(angle.encode('ascii'))
+    #time.sleep(0.1)
+    print(angle)
 
 def zoomIn(frame, center, width, height):
     i = 100
@@ -28,6 +38,7 @@ def zoomIn(frame, center, width, height):
 def calculateRotation(tagPose, rotation, translation, mtx, dist, width, height, precision):
     imgpts, jac = cv.projectPoints(tagPose, rotation, translation, mtx, dist)
     center = imgpts
+    prevRotation = rotation[1][0]
     hMin = 0
     hMax = height
     wMin = 2 * (width / 5)
@@ -37,14 +48,18 @@ def calculateRotation(tagPose, rotation, translation, mtx, dist, width, height, 
     while True:
         imgpts, jac = cv.projectPoints(tagPose, rotation, translation, mtx, dist)
         center = imgpts
-        print(imgpts)
+        #print(imgpts)
         if (center[0][0][0] > wMax):
             rotation[1][0] -= rad
         elif (center[0][0][0] < wMin):
             rotation[1][0] += rad
         else:
             break    
-    return rotation, imgpts, jac
+    if (prevRotation != rotation[1][0]):
+        ret = True
+    else:
+        ret = False
+    return rotation, imgpts, jac, ret
 
 def drawBorders(img, corners):
     length = len(corners)
@@ -212,9 +227,12 @@ def cam3():
             
             
             #imgpts, jac = cv.projectPoints(detectedTag.pose_t, R, t, mtx, dist)
-            R, imgpts, jac = calculateRotation(detectedTag.pose_t, R, t, mtx, dist, 1920, 1080, 0.01)
-            print(imgpts)
+            R, imgpts, jac, r = calculateRotation(detectedTag.pose_t, R, t, mtx, dist, 1920, 1080, 0.01)
+            #print(imgpts)
             
+            if (r):
+                print(r)
+                rotateCamera(R)
             x1, y1 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
             x2, y2 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
             cv.line(frame,(x1,y1),(x2,y2),(0,255 * ((0 + 1) % 2),255 * ((0 + 2) % 2)),2)
@@ -243,5 +261,5 @@ if __name__ == "__main__":
     # wait until thread 2 is completely executed 
     t2.join() 
     # both threads completely executed 
-    #ser.close()
+    ser.close()
     print("Done!")
