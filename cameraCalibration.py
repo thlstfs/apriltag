@@ -5,13 +5,14 @@ def setCamResolution(cap, width, height):
     cap.set(3,width)
     cap.set(4,height)
 
-def cameraCalibrate(camId, width, height, output):
+def cameraCalibrate(camId, width, height, output, squareSize):
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((6*7,3), np.float32)
     objp[:,:2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
     # Arrays to store object points and image points from all the images.
+    objp = objp * squareSize
     objpoints = [] # 3d point in real world space
     imgpoints = [] # 2d points in image plane.
     
@@ -45,7 +46,13 @@ def cameraCalibrate(camId, width, height, output):
             
     if (ret1):
         np.savez(output, mtx = mtx, dist = dist, rvecs = rvecs, tvecs = tvecs)
-        
+    # mean_error = 0
+    # for i in range(len(objp)):
+    #     imgpoints2, _ = cv.projectPoints(objp[i], rvecs[i], tvecs[i], mtx, dist)
+    #     error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+    #     mean_error += error
+    # print( "total error: {}".format(mean_error/len(objpoints)) )
     print("done")
     
-cameraCalibrate(0, 960, 540, "cam")
+    
+cameraCalibrate(0, 960, 540, "webcam540p", 0.024)
