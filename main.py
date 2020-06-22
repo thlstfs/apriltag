@@ -2,9 +2,34 @@ import pupil_apriltags as at
 import cv2 as cv
 import numpy as np
 import threading
+import serial
+import time
+ser = serial.Serial('COM7',baudrate=9600, timeout=1)
+ser.isOpen()
 
 detectedTag = None
 
+def rotateCamera(rotation, center, width, height):
+    global ser
+    hMin = 0
+    hMax = height
+    wMin = width / 5
+    wMax = width - wMin
+    rotY = np.rad2deg(rotation[1][0])
+    if (center[0][0][0] > wMax):
+        rotY -= 0.1
+        rotation[1][0] = np.deg2rad(rotY)
+        
+    if (center[0][0][0] < wMin):
+        rotY += 0.1
+        rotation[1][0] = np.deg2rad(rotY)
+    print(rotY)
+    angle = str(- (int(rotY) * 5))
+    ser.write(angle.encode('ascii'))
+    #ser.write(angle)
+    time.sleep(0.1)
+    print(angle)
+    return rotation
 
 def drawBorders(img, corners):
     length = len(corners)
@@ -148,12 +173,12 @@ def cam3():
                            debug=0)
     
     
-    cap = cv.VideoCapture(3)
+    cap = cv.VideoCapture(2)
     setCamResolution(cap, 1920, 1080)
     with np.load('cam1.npz') as X:
         mtx, dist, rvecs, tvecs = [X[i] for i in ('mtx','dist','rvecs','tvecs')]
    
-    
+    R = np.float32([[0], [0], [0]])
     while(True):
         # print(rvecs)
         ret, frame = cap.read()
@@ -172,10 +197,11 @@ def cam3():
                 cam2Vec = tag.pose_t
                 cam2Rot = [rotX, rotY, rotZ]
         if (detectedTag):
-            t = np.float32([[0.35], [-0.03], [0]])
+            t = np.float32([[0.5], [0], [0]])
             
-            R = np.float32([[0], [0], [0]])
+            
             imgpts, jac = cv.projectPoints(detectedTag.pose_t, R, t, mtx, dist)
+            R = rotateCamera(R, imgpts, 1920, 1080)
             print(imgpts)
             x1, y1 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
             x2, y2 = int(imgpts[0][0][0]), int(imgpts[0][0][1])
@@ -203,4 +229,5 @@ if __name__ == "__main__":
     # wait until thread 2 is completely executed 
     t2.join() 
     # both threads completely executed 
+    ser.close()
     print("Done!")
