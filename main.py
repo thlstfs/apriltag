@@ -10,7 +10,7 @@ import time
 detectedTag = None
 
 def zoomIn(frame, center, width, height):
-    i = 250
+    i = 100
     xMax = int(center[0][0][0]) + i
     xMin = int(center[0][0][0]) - i
     yMax = int(center[0][0][1]) + i
@@ -23,7 +23,7 @@ def zoomIn(frame, center, width, height):
         yMax = height
     if (yMin < 0):
         yMin = 0
-    return frame[xMin:xMax, yMin:yMax]
+    return frame[yMin:yMax, xMin:xMax]
 
 def calculateRotation(tagPose, rotation, translation, mtx, dist, width, height, precision):
     imgpts, jac = cv.projectPoints(tagPose, rotation, translation, mtx, dist)
@@ -208,7 +208,7 @@ def cam3():
                 cam2Vec = tag.pose_t
                 cam2Rot = [rotX, rotY, rotZ]
         if (detectedTag):
-            t = np.float32([[0.32], [0], [0]])
+            t = np.float32([[0.34], [-0.03], [0]])
             
             
             #imgpts, jac = cv.projectPoints(detectedTag.pose_t, R, t, mtx, dist)
